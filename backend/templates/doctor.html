@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedRev - 医生审核</title>
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="page-shell">
+        <header class="topbar">
+            <div>
+                <div class="eyebrow">MedRev 审核工作台</div>
+                <h1>医生审核界面</h1>
+                <p class="topbar-subtitle">病例报告、当前图像、模型结果与同病例其他图片统一展示</p>
+            </div>
+            <div class="login-info">
+                <span class="login-badge">已登录: <strong>{{ reviewer_id }}</strong></span>
+                <a class="link-btn" href="{{ url_for('logout') }}">登出</a>
+            </div>
+        </header>
+
+        <main class="workspace">
+            <section class="control-bar card">
+                <div class="control-block">
+                    <label for="taskType">任务类型</label>
+                    <select id="taskType">
+                        <option value="hard">页面一 · 困难样本 GT 检查</option>
+                        <option value="pseudo">页面二 · 无标注伪标签检查</option>
+                    </select>
+                </div>
+                <div class="counter-panel">
+                    <div class="counter-item">
+                        <span class="counter-label">当前类型剩余</span>
+                        <strong id="currentRemainingCount">-</strong>
+                    </div>
+                    <div class="counter-item">
+                        <span class="counter-label">总剩余任务</span>
+                        <strong id="totalRemainingCount">-</strong>
+                    </div>
+                </div>
+                <button id="loadBtn" class="btn primary">取下一条</button>
+            </section>
+
+            <section id="taskArea" class="dashboard" hidden>
+                <section class="card hero-card">
+                    <div class="hero-header">
+                        <div>
+                            <div class="section-label">当前任务</div>
+                            <h2 id="title">任务详情</h2>
+                        </div>
+                        <div id="taskChip" class="status-chip">待加载</div>
+                    </div>
+
+                    <div class="hero-grid">
+                        <div class="media-block spotlight">
+                            <div class="media-caption">病例报告图片</div>
+                            <div class="image-frame large-frame" data-click-preview>
+                                <img id="reportImg" alt="病例报告图片">
+                                <div class="image-fallback">
+                                    <span>暂无病例报告图片</span>
+                                    <button type="button" class="image-retry" data-retry-for="reportImg">重试</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-panel">
+                            <div class="info-card">
+                                <span class="info-label">Case</span>
+                                <strong id="caseId"></strong>
+                            </div>
+                            <div class="info-card">
+                                <span class="info-label">Image</span>
+                                <strong id="imageName"></strong>
+                            </div>
+                            <div class="info-card">
+                                <span class="info-label">Model Version</span>
+                                <strong id="modelVersion"></strong>
+                            </div>
+                            <div class="info-card">
+                                <span class="info-label">Confidence</span>
+                                <strong id="modelConfidence"></strong>
+                            </div>
+                            <div class="info-card">
+                                <span class="info-label">Task ID</span>
+                                <strong id="taskIdText"></strong>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="image-grid">
+                    <article class="card image-card">
+                        <div class="card-head">
+                            <div>
+                                <div class="section-label">当前审核图像</div>
+                                <h3>原始图像</h3>
+                            </div>
+                        </div>
+                        <div class="image-frame" data-click-preview>
+                            <img id="currentImg" alt="当前审核图像">
+                            <div class="image-fallback">
+                                <span>当前图片加载失败</span>
+                                <button type="button" class="image-retry" data-retry-for="currentImg">重试</button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="card image-card" id="gtCard">
+                        <div class="card-head">
+                            <div>
+                                <div class="section-label">页面一展示</div>
+                                <h3>GT 展示图</h3>
+                            </div>
+                        </div>
+                        <div class="image-frame" data-click-preview>
+                            <img id="gtImg" alt="GT 展示图">
+                            <div class="image-fallback">
+                                <span>GT 信息缺失</span>
+                                <button type="button" class="image-retry" data-retry-for="gtImg">重试</button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="card image-card" id="predCard">
+                        <div class="card-head">
+                            <div>
+                                <div class="section-label">预测结果</div>
+                                <h3 id="predTitle">模型预测展示图</h3>
+                            </div>
+                        </div>
+                        <div class="image-frame" data-click-preview>
+                            <img id="predImg" alt="模型预测展示图">
+                            <div class="image-fallback">
+                                <span>模型预测信息缺失</span>
+                                <button type="button" class="image-retry" data-retry-for="predImg">重试</button>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="card gallery-card">
+                    <div class="card-head gallery-head">
+                        <div>
+                            <div class="section-label">病例上下文</div>
+                            <h3>同病例其他图片</h3>
+                        </div>
+                        <div class="gallery-hint">点击缩略图可放大</div>
+                    </div>
+                    <div id="relatedGallery" class="gallery-grid"></div>
+                    <div id="relatedEmpty" class="empty-state" hidden>暂无其他图片</div>
+                </section>
+
+                <section class="card actions-card">
+                    <div class="card-head">
+                        <div>
+                            <div class="section-label">医生操作</div>
+                            <h3>提交审核结果</h3>
+                        </div>
+                    </div>
+
+                    <div class="actions-layout">
+                        <div id="hardActions" class="button-group">
+                            <button class="btn success" id="gtCorrect">GT 正确</button>
+                            <button class="btn danger" id="gtError">GT 有误</button>
+                        </div>
+
+                        <div id="pseudoActions" class="pseudo-actions" hidden>
+                            <button class="btn success" id="pseudoCorrect">伪标签正确</button>
+                            <div class="inline-field">
+                                <label for="errorType">错误类型</label>
+                                <select id="errorType">
+                                    <option value="category_error">类别错误</option>
+                                    <option value="box_size_error">框大小错误</option>
+                                    <option value="false_positive">误检</option>
+                                    <option value="false_negative">漏检</option>
+                                </select>
+                            </div>
+                            <button class="btn danger" id="pseudoError">提交错误</button>
+                        </div>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <div id="previewModal" class="preview-modal" hidden>
+        <button id="closePreview" class="preview-close" aria-label="关闭预览">×</button>
+        <div id="previewStage" class="preview-stage">
+            <img id="previewImage" alt="预览图像">
+        </div>
+    </div>
+
+    <script>
+        const loadBtn = document.getElementById('loadBtn')
+        const taskTypeSelect = document.getElementById('taskType')
+        const taskArea = document.getElementById('taskArea')
+        const title = document.getElementById('title')
+        const taskChip = document.getElementById('taskChip')
+        const reportImg = document.getElementById('reportImg')
+        const currentImg = document.getElementById('currentImg')
+        const gtImg = document.getElementById('gtImg')
+        const predImg = document.getElementById('predImg')
+        const caseId = document.getElementById('caseId')
+        const imageName = document.getElementById('imageName')
+        const modelVersion = document.getElementById('modelVersion')
+        const modelConfidence = document.getElementById('modelConfidence')
+        const taskIdText = document.getElementById('taskIdText')
+        const currentRemainingCount = document.getElementById('currentRemainingCount')
+        const totalRemainingCount = document.getElementById('totalRemainingCount')
+        const predTitle = document.getElementById('predTitle')
+        const hardActions = document.getElementById('hardActions')
+        const pseudoActions = document.getElementById('pseudoActions')
+        const relatedGallery = document.getElementById('relatedGallery')
+        const relatedEmpty = document.getElementById('relatedEmpty')
+        const previewModal = document.getElementById('previewModal')
+        const previewStage = document.getElementById('previewStage')
+        const previewImage = document.getElementById('previewImage')
+        const closePreview = document.getElementById('closePreview')
+        let currentTask = null
+        const previewState = {
+            src: '',
+            baseScale: 1,
+            scale: 1,
+            x: 0,
+            y: 0,
+            dragging: false,
+            pointerId: null,
+            startX: 0,
+            startY: 0,
+            originX: 0,
+            originY: 0,
+            minScale: 0.2,
+            maxScale: 8,
+        }
+        const reviewerId = ("{{ reviewer_id }}") || 'anonymous'
+
+        loadBtn.addEventListener('click', async () => {
+            await loadNext(taskTypeSelect.value)
+        })
+
+        taskTypeSelect.addEventListener('change', async () => {
+            await loadNext(taskTypeSelect.value)
+        })
+
+        function assetUrl(taskId, kind, index = null) {
+            const query = index === null ? '' : `?index=${index}`
+            return `/task/${encodeURIComponent(taskId)}/asset/${kind}${query}`
+        }
+
+        function bindPreview(frame, sourceGetter) {
+            frame.addEventListener('click', () => {
+                const src = sourceGetter()
+                if (!src) return
+                openPreview(src)
+            })
+        }
+
+        function cacheBust(src) {
+            const separator = src.includes('?') ? '&' : '?'
+            return `${src}${separator}t=${Date.now()}`
+        }
+
+        function setImageSource(img, src) {
+            const frame = img.closest('.image-frame')
+            if (!src) {
+                img.dataset.source = ''
+                img.removeAttribute('src')
+                if (frame) frame.classList.add('is-empty')
+                return
+            }
+            img.dataset.source = src
+            img.src = cacheBust(src)
+        }
+
+        function retryImageById(imgId) {
+            const img = document.getElementById(imgId)
+            if (!img || !img.dataset.source) return
+            setImageSource(img, img.dataset.source)
+        }
+
+        function resetPreviewState() {
+            previewState.baseScale = 1
+            previewState.scale = 1
+            previewState.x = 0
+            previewState.y = 0
+            previewState.dragging = false
+            previewState.pointerId = null
+            previewState.startX = 0
+            previewState.startY = 0
+            previewState.originX = 0
+            previewState.originY = 0
+            applyPreviewTransform()
+        }
+
+        function applyPreviewTransform() {
+            previewImage.style.transform = `translate(-50%, -50%) translate(${previewState.x}px, ${previewState.y}px) scale(${previewState.scale})`
+        }
+
+        function computeFitScale() {
+            if (!previewImage.naturalWidth || !previewImage.naturalHeight) return 1
+            const stageRect = previewStage.getBoundingClientRect()
+            const availableWidth = Math.max(200, stageRect.width - 72)
+            const availableHeight = Math.max(200, stageRect.height - 72)
+            return Math.min(availableWidth / previewImage.naturalWidth, availableHeight / previewImage.naturalHeight, 1)
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max)
+        }
+
+        function openPreview(src) {
+            previewModal.hidden = false
+            previewState.src = src
+            previewImage.onload = () => {
+                previewState.baseScale = computeFitScale()
+                previewState.scale = previewState.baseScale
+                previewState.x = 0
+                previewState.y = 0
+                previewState.minScale = Math.max(previewState.baseScale * 0.6, 0.15)
+                previewState.maxScale = Math.max(previewState.baseScale * 8, 4)
+                applyPreviewTransform()
+            }
+            previewImage.src = src
+            if (previewImage.complete && previewImage.naturalWidth) {
+                requestAnimationFrame(() => {
+                    previewState.baseScale = computeFitScale()
+                    previewState.scale = previewState.baseScale
+                    previewState.x = 0
+                    previewState.y = 0
+                    previewState.minScale = Math.max(previewState.baseScale * 0.6, 0.15)
+                    previewState.maxScale = Math.max(previewState.baseScale * 8, 4)
+                    applyPreviewTransform()
+                })
+            }
+        }
+
+        function wireImageFallback(img) {
+            const frame = img.closest('.image-frame')
+            const fallback = frame ? frame.querySelector('.image-fallback') : null
+            if (!frame || !fallback) return
+            img.addEventListener('load', () => {
+                frame.classList.remove('is-empty')
+            })
+            img.addEventListener('error', () => {
+                frame.classList.add('is-empty')
+            })
+        }
+
+        wireImageFallback(reportImg)
+        wireImageFallback(currentImg)
+        wireImageFallback(gtImg)
+        wireImageFallback(predImg)
+
+        bindPreview(reportImg.closest('.image-frame'), () => reportImg.src)
+        bindPreview(currentImg.closest('.image-frame'), () => currentImg.src)
+        bindPreview(gtImg.closest('.image-frame'), () => gtImg.src)
+        bindPreview(predImg.closest('.image-frame'), () => predImg.src)
+
+        document.querySelectorAll('.image-retry').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation()
+                retryImageById(button.dataset.retryFor)
+            })
+        })
+
+        closePreview.addEventListener('click', () => {
+            previewModal.hidden = true
+            previewImage.src = ''
+            resetPreviewState()
+        })
+        previewModal.addEventListener('click', (event) => {
+            if (event.target === previewModal) {
+                previewModal.hidden = true
+                previewImage.src = ''
+                resetPreviewState()
+            }
+        })
+
+        previewStage.addEventListener('pointerdown', (event) => {
+            if (previewModal.hidden || !previewImage.src) return
+            event.preventDefault()
+            previewState.dragging = true
+            previewState.pointerId = event.pointerId
+            previewState.startX = event.clientX
+            previewState.startY = event.clientY
+            previewState.originX = previewState.x
+            previewState.originY = previewState.y
+            previewStage.setPointerCapture(event.pointerId)
+            previewStage.classList.add('is-dragging')
+        })
+
+        previewStage.addEventListener('pointermove', (event) => {
+            if (!previewState.dragging || previewState.pointerId !== event.pointerId) return
+            const dx = event.clientX - previewState.startX
+            const dy = event.clientY - previewState.startY
+            previewState.x = previewState.originX + dx
+            previewState.y = previewState.originY + dy
+            applyPreviewTransform()
+        })
+
+        function stopDragging(event) {
+            if (previewState.pointerId !== event.pointerId) return
+            previewState.dragging = false
+            previewState.pointerId = null
+            previewStage.classList.remove('is-dragging')
+        }
+
+        previewStage.addEventListener('pointerup', stopDragging)
+        previewStage.addEventListener('pointercancel', stopDragging)
+
+        previewStage.addEventListener('wheel', (event) => {
+            if (previewModal.hidden || !previewImage.src) return
+            event.preventDefault()
+            const stageRect = previewStage.getBoundingClientRect()
+            const cursorX = event.clientX - stageRect.left - stageRect.width / 2
+            const cursorY = event.clientY - stageRect.top - stageRect.height / 2
+            const zoomFactor = event.deltaY < 0 ? 1.12 : 0.89
+            const nextScale = clamp(previewState.scale * zoomFactor, previewState.minScale, previewState.maxScale)
+            const ratio = nextScale / previewState.scale
+            previewState.x = (previewState.x - cursorX) * ratio + cursorX
+            previewState.y = (previewState.y - cursorY) * ratio + cursorY
+            previewState.scale = nextScale
+            applyPreviewTransform()
+        }, { passive: false })
+
+        previewStage.addEventListener('dblclick', () => {
+            if (previewModal.hidden || !previewImage.src) return
+            previewState.scale = previewState.baseScale
+            previewState.x = 0
+            previewState.y = 0
+            applyPreviewTransform()
+        })
+
+        async function loadNext(type) {
+            await refreshRemainingStats(type)
+            const res = await fetch(`/tasks/my-next?type=${encodeURIComponent(type)}`)
+            if (res.status === 403) {
+                window.location.href = '/login'
+                return
+            }
+            if (!res.ok) {
+                const payload = await res.json().catch(() => ({}))
+                currentTask = null
+                taskArea.hidden = true
+                if (payload.error === 'no available task') {
+                    alert(type === 'hard' ? '页面一没有剩余任务' : '页面二没有剩余任务')
+                } else {
+                    alert(payload.error || '加载任务失败')
+                }
+                return
+            }
+            const task = await res.json()
+
+            currentTask = task
+            taskArea.hidden = false
+            title.textContent = type === 'hard' ? '页面一 · 困难样本 GT 检查' : '页面二 · 无标注伪标签检查'
+            taskChip.textContent = type === 'hard' ? '页面一' : '页面二'
+            caseId.textContent = currentTask.case_id || '—'
+            imageName.textContent = currentTask.image_name || '—'
+            modelVersion.textContent = currentTask.model_version || '—'
+            modelConfidence.textContent = currentTask.model_confidence ?? '—'
+            taskIdText.textContent = currentTask.task_id || '—'
+            predTitle.textContent = type === 'hard' ? '模型预测展示图' : '模型伪标签展示图'
+
+            hardActions.hidden = type !== 'hard'
+            pseudoActions.hidden = type !== 'pseudo'
+
+            const hasReport = Boolean(currentTask.report_image_path)
+            const hasCurrentImage = Boolean(currentTask.image_path)
+            const hasGtInfo = type !== 'hard' || (currentTask.gt_annotation || []).length > 0
+            const predList = type === 'hard' ? currentTask.model_prediction : currentTask.pseudo_label_prediction
+            const hasPredInfo = (predList || []).length > 0
+
+            setImageSource(reportImg, hasReport ? assetUrl(currentTask.task_id, 'report') : '')
+            setImageSource(currentImg, hasCurrentImage ? assetUrl(currentTask.task_id, 'current') : '')
+            setImageSource(gtImg, hasGtInfo ? `/render?task_id=${encodeURIComponent(currentTask.task_id)}&show=gt` : '')
+            setImageSource(predImg, hasPredInfo ? `/render?task_id=${encodeURIComponent(currentTask.task_id)}&show=pred` : '')
+
+            renderRelatedImages(currentTask)
+            await refreshRemainingStats(type)
+        }
+
+        async function refreshRemainingStats(type) {
+            const res = await fetch('/tasks/my-remaining')
+            if (res.status === 403) {
+                window.location.href = '/login'
+                return
+            }
+            if (!res.ok) {
+                currentRemainingCount.textContent = '-'
+                totalRemainingCount.textContent = '-'
+                return
+            }
+            const stats = await res.json()
+            const current = type === 'hard' ? stats.hard : stats.pseudo
+            currentRemainingCount.textContent = `${current.remaining} / ${current.total}`
+            totalRemainingCount.textContent = `${stats.total_remaining}`
+        }
+
+        function normalizePath(value) {
+            return (value || '').replaceAll('\\', '/').toLowerCase()
+        }
+
+        function renderRelatedImages(task) {
+            relatedGallery.innerHTML = ''
+            const currentPath = normalizePath(task.image_path)
+            const reportPath = normalizePath(task.report_image_path)
+            const seen = new Set([currentPath, reportPath])
+            const related = (task.related_images || [])
+                .map((item, index) => ({ item, index }))
+                .filter(({ item }) => {
+                    const normalized = normalizePath(item)
+                    if (!normalized || seen.has(normalized)) return false
+                    seen.add(normalized)
+                    return true
+                })
+
+            if (related.length === 0) {
+                relatedEmpty.hidden = false
+                return
+            }
+
+            relatedEmpty.hidden = true
+            related.forEach(({ index }) => {
+                const item = document.createElement('button')
+                item.type = 'button'
+                item.className = 'thumb-card'
+                const img = document.createElement('img')
+                img.src = assetUrl(task.task_id, 'related', index)
+                img.alt = `同病例图片 ${index + 1}`
+                const caption = document.createElement('span')
+                caption.textContent = `同病例图 ${index + 1}`
+                item.appendChild(img)
+                item.appendChild(caption)
+                item.addEventListener('click', () => {
+                    openPreview(img.src)
+                })
+                relatedGallery.appendChild(item)
+            })
+        }
+
+        async function submitReview(result, errorType = null) {
+            if (!currentTask) return
+            const payload = {
+                run_id: currentTask.run_id,
+                task_id: currentTask.task_id,
+                task_type: currentTask.task_id.includes('_hard_') ? 'hard_sample_gt_review' : 'pseudo_label_review',
+                organ: currentTask.organ,
+                image_name: currentTask.image_name,
+                image_path: currentTask.image_path,
+                review_result: result,
+                error_type: errorType,
+                reviewer_id: reviewerId,
+                submitted_at: new Date().toISOString()
+            }
+
+            try {
+                const r = await fetch('/review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                if (r.ok) {
+                    alert('提交成功')
+                    await loadNext(taskTypeSelect.value)
+                    return
+                }
+
+                const data = await r.json().catch(() => ({}))
+                alert(`保存失败，请重试：${data.error || '提交失败'}`)
+            } catch (error) {
+                alert(`保存失败，请重试：${error.message}`)
+            }
+        }
+
+        document.getElementById('gtCorrect').addEventListener('click', () => submitReview('gt_correct'))
+        document.getElementById('gtError').addEventListener('click', () => submitReview('gt_error'))
+
+        document.getElementById('pseudoCorrect').addEventListener('click', () => submitReview('pseudo_label_correct'))
+        document.getElementById('pseudoError').addEventListener('click', () => {
+            const et = document.getElementById('errorType').value
+            submitReview('pseudo_label_error', et)
+        })
+
+        loadNext(taskTypeSelect.value)
+    </script>
+</body>
+
+</html>

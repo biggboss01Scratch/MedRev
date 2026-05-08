@@ -1,0 +1,14 @@
+{
+    "doctor_1": {
+        "password": "password1",
+        "role": "doctor"
+    },
+    "doctor_2": {
+        "password": "password2",
+        "role": "doctor"
+    },
+    "admin": {
+        "password": "adminpass",
+        "role": "admin"
+    }
+}

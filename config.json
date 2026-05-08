@@ -1,0 +1,12 @@
+{
+  "run_id": "test_run_001",
+  "reset_outputs_on_start": true,
+  "bootstrap_run_id": "test_run_001",
+  "bootstrap_organ": "肾脏",
+  "data_root": "Test",
+  "prepared_data_root": "test_data",
+  "conf_threshold": 0.7,
+  "iou_threshold": 0.5,
+  "hard_sample_mode": "all_pred",
+  "auto_export": true
+}

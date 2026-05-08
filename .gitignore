@@ -1,0 +1,52 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local environment/config
+.env
+.env.*
+
+# Runtime databases and local outputs
+*.db
+*.sqlite
+*.sqlite3
+review_outputs/
+tasks/*.jsonl
+tasks/*.json
+
+# Data directories
+# Test contains real production/source data.
+# test_data is the generated engineering/cache layout.
+Test/
+test_data/
+
+# Demo/generated assets
+backend_render.jpg
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Large archives/artifacts
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar

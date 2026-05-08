@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>管理员控制台 - MedRev</title>
+    <style>
+        :root {
+            --bg: #081120;
+            --panel: rgba(9, 18, 36, 0.82);
+            --panel-strong: rgba(12, 24, 46, 0.95);
+            --line: rgba(141, 166, 204, 0.22);
+            --text: #edf4ff;
+            --muted: #96a8c6;
+            --accent: #6ee7ff;
+            --accent-2: #8b5cf6;
+            --good: #2dd4bf;
+            --warn: #f59e0b;
+            --bad: #fb7185;
+            --shadow: 0 18px 54px rgba(0, 0, 0, 0.42);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(110, 231, 255, 0.14), transparent 28%),
+                radial-gradient(circle at top right, rgba(139, 92, 246, 0.18), transparent 25%),
+                linear-gradient(160deg, #060b15 0%, #0b1324 44%, #101a31 100%);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1400;
+            border-bottom: 1px solid rgba(141, 166, 204, 0.25);
+            background: rgba(8, 17, 32, 0.92);
+            backdrop-filter: blur(10px);
+        }
+
+        .page-nav-inner {
+            width: min(1520px, calc(100vw - 32px));
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 0;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .nav-link.active {
+            border-color: rgba(110, 231, 255, 0.35);
+            background: rgba(110, 231, 255, 0.14);
+            color: #d8fbff;
+        }
+
+        .shell {
+            width: min(1520px, calc(100vw - 32px));
+            margin: 0 auto;
+            padding: 88px 0 40px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: flex-start;
+            padding: 22px 24px;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(13, 23, 43, 0.95), rgba(8, 17, 32, 0.9));
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 18px;
+        }
+
+        .eyebrow {
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+
+        .title {
+            font-size: clamp(28px, 3vw, 38px);
+            line-height: 1.08;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-top: 10px;
+            max-width: 860px;
+            line-height: 1.6;
+        }
+
+        .top-meta {
+            display: grid;
+            gap: 10px;
+            justify-items: end;
+            text-align: right;
+        }
+
+        .meta-line {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .pill {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .pill.accent {
+            border-color: rgba(110, 231, 255, 0.35);
+            color: #d8fbff;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1.25fr 0.95fr 0.95fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(13, 23, 43, 0.92), rgba(8, 17, 32, 0.85));
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 20px 0;
+        }
+
+        .card-title {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        .card-subtitle {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .card-body {
+            padding: 18px 20px 20px;
+        }
+
+        .metric {
+            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.022));
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 34px;
+            font-weight: 800;
+            margin-top: 8px;
+            line-height: 1;
+        }
+
+        .metric-note {
+            color: var(--muted);
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        .bars {
+            display: grid;
+            gap: 14px;
+        }
+
+        .bar-row {
+            display: grid;
+            gap: 8px;
+        }
+
+        .bar-top {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .bar-track {
+            height: 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .field label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        select,
+        input[type="text"],
+        button {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            padding: 11px 13px;
+            font: inherit;
+            outline: none;
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%), linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+            background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            padding-right: 40px;
+        }
+
+        select option {
+            background: #0f172a;
+            color: #f8fbff;
+        }
+
+        select option:checked,
+        select option:hover {
+            background: #1d4ed8;
+            color: #ffffff;
+        }
+
+        select optgroup {
+            background: #0b1324;
+            color: #cbd5e1;
+        }
+
+        select:focus,
+        input[type="text"]:focus {
+            border-color: rgba(110, 231, 255, 0.6);
+            box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.12);
+        }
+
+        button {
+            cursor: pointer;
+            transition: transform .15s ease, border-color .15s ease, background .15s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(110, 231, 255, 0.45);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn {
+            width: auto;
+            min-width: 124px;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, rgba(110, 231, 255, 0.22), rgba(139, 92, 246, 0.25));
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.22), rgba(16, 185, 129, 0.18));
+        }
+
+        .btn.warn {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(251, 113, 133, 0.12));
+        }
+
+        .btn.ghost {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .table-wrap {
+            overflow: auto;
+            max-height: 520px;
+            border-top: 1px solid var(--line);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background: rgba(10, 18, 34, 0.95);
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            vertical-align: top;
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .status.pending {
+            color: #dbeafe;
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .status.assigned {
+            color: #fef3c7;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .status.reviewed {
+            color: #ccfbf1;
+            background: rgba(45, 212, 191, 0.1);
+        }
+
+        .tasks-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto auto;
+            gap: 12px;
+            padding: 18px 20px 16px;
+        }
+
+        .side-stack {
+            display: grid;
+            gap: 14px;
+        }
+
+        .list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .list-item {
+            padding: 12px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .list-item-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .list-item-title {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .list-item-meta {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .review-feed {
+            display: grid;
+            gap: 10px;
+        }
+
+        .review-item {
+            display: grid;
+            gap: 4px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .review-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .review-main {
+            font-size: 13px;
+        }
+
+        .review-sub {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .code-box {
+            font-family: Consolas, "SFMono-Regular", Menlo, Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.55;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 12px 14px;
+            color: #dbeafe;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .footer-note {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .path-picker {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .path-picker .btn {
+            min-width: 88px;
+            width: auto;
+        }
+
+        .modal-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 9, 18, 0.72);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+            padding: 16px;
+        }
+
+        .modal-mask[hidden] {
+            display: none !important;
+        }
+
+        .modal-card {
+            width: min(900px, 95vw);
+            max-height: min(80vh, 760px);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(13, 23, 43, 0.98), rgba(8, 17, 32, 0.96));
+            box-shadow: var(--shadow);
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            overflow: hidden;
+        }
+
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px 0;
+        }
+
+        .modal-body {
+            padding: 10px 16px 16px;
+            overflow: auto;
+        }
+
+        .folder-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .folder-item {
+            width: 100%;
+            text-align: left;
+            border-radius: 12px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+        }
+
+        .modal-path {
+            margin: 8px 16px 0;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.22);
+            color: #dbeafe;
+            font-family: Consolas, "SFMono-Regular", Menlo, Monaco, monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 16px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        @media (max-width: 1180px) {
+
+            .grid-4,
+            .grid-3,
+            .grid-main,
+            .toolbar,
+            .tasks-toolbar {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .topbar {
+                flex-direction: column;
+            }
+
+            .top-meta {
+                justify-items: start;
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .page-nav-inner {
+                width: min(100vw - 18px, 100%);
+            }
+
+            .shell {
+                width: min(100vw - 18px, 100%);
+                padding: 112px 0 18px;
+            }
+
+            .grid-4,
+            .grid-3,
+            .grid-main,
+            .toolbar,
+            .tasks-toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .card-head,
+            .topbar {
+                padding: 18px;
+            }
+
+            .card-body {
+                padding: 16px 18px 18px;
+            }
+
+            thead {
+                display: none;
+            }
+
+            table,
+            tbody,
+            tr,
+            td {
+                display: block;
+                width: 100%;
+            }
+
+            tbody tr {
+                padding: 12px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            tbody td {
+                border: 0;
+                padding: 6px 18px;
+            }
+
+            .hide-mobile {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="page-nav">
+        <div class="page-nav-inner">
+            <div class="nav-links">
+                <a class="nav-link active" href="/admin">主页</a>
+                <a class="nav-link" href="/admin/results">结果页</a>
+                <a class="nav-link" href="/admin/settings">设置页</a>
+                <a class="nav-link" href="/doctor">医生页</a>
+            </div>
+            <a class="nav-link" href="{{ url_for('logout') }}">登出</a>
+        </div>
+    </nav>
+
+    <div class="shell">
+        <header class="topbar">
+            <div>
+                <div class="eyebrow">MedRev Admin Console</div>
+                <h1 class="title">管理员控制台</h1>
+                <p class="subtitle">查看审核进度、分配任务、跟踪医生工作量、导出当前轮次结果。所有统计均来自本地文件与当前 run_id。</p>
+            </div>
+            <div class="top-meta">
+                <div class="meta-line">
+                    <span class="pill accent" id="runIdPill">run_id: -</span>
+                </div>
+                <div class="meta-line">
+                    <span class="pill" id="currentUserPill">登录用户: {{ session.get('user', 'unknown') }}</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="grid-4" id="metricCards">
+            <div class="metric card">
+                <div class="metric-label">总任务</div>
+                <div class="metric-value" id="metricTotalTasks">-</div>
+                <div class="metric-note">页面一 + 页面二</div>
+            </div>
+            <div class="metric card">
+                <div class="metric-label">已审核</div>
+                <div class="metric-value" id="metricReviewedTotal">-</div>
+                <div class="metric-note">原始审核记录条数</div>
+            </div>
+            <div class="metric card">
+                <div class="metric-label">剩余待处理</div>
+                <div class="metric-value" id="metricRemainingTotal">-</div>
+                <div class="metric-note">未完成的任务总数</div>
+            </div>
+            <div class="metric card">
+                <div class="metric-label">当前轮次导出</div>
+                <div class="metric-value" id="metricExportState">-</div>
+                <div class="metric-note">可手动触发导出</div>
+            </div>
+        </section>
+
+        <section class="grid-main">
+            <div class="card">
+                <div class="card-head">
+                    <div>
+                        <h2 class="card-title">审核进度</h2>
+                        <div class="card-subtitle">按页面一 / 页面二展示当前任务池、已审核量与剩余量。</div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn ghost" id="reloadSummaryBtn">刷新统计</button>
+                    </div>
+                </div>
+                <div class="card-body bars" id="progressBars"></div>
+            </div>
+
+            <div class="side-stack">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h2 class="card-title">导出与状态</h2>
+                            <div class="card-subtitle">生成当前轮次的 GT 问题清单、可用伪标签清单、COCO 文件和汇总文件。</div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="btn-row">
+                            <button class="btn primary" id="exportBtn">手动导出结果</button>
+                            <button class="btn ghost" id="reloadAllBtn">整页刷新</button>
+                        </div>
+                        <div style="height:12px"></div>
+                        <div class="list" id="exportResultList"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-bottom:14px;">
+            <div class="card-head">
+                <div>
+                    <h2 class="card-title">医生工作量</h2>
+                    <div class="card-subtitle">按分配统计医生当前待处理数量。</div>
+                </div>
+            </div>
+            <div class="card-body" id="doctorList"></div>
+        </section>
+
+        <section class="card">
+            <div class="card-head">
+                <div>
+                    <h2 class="card-title">任务分配</h2>
+                    <div class="card-subtitle">勾选任务后分配给医生，支持页面一 / 页面二切换、按状态筛选、按医生筛选。</div>
+                </div>
+            </div>
+            <div class="tasks-toolbar">
+                <div class="field">
+                    <label>任务类型</label>
+                    <select id="taskType">
+                        <option value="hard">页面一（困难样本）</option>
+                        <option value="pseudo">页面二（伪标签）</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>状态筛选</label>
+                    <select id="statusFilter">
+                        <option value="all">全部</option>
+                        <option value="unassigned">未分配</option>
+                        <option value="assigned">已分配</option>
+                        <option value="reviewed">已审核</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>医生筛选</label>
+                    <select id="doctorFilter"></select>
+                </div>
+                <div class="field">
+                    <label>分配给医生</label>
+                    <select id="assigneeSelect"></select>
+                </div>
+                <div class="field">
+                    <label>搜索任务/病例</label>
+                    <input id="taskSearch" type="text" placeholder="task_id / case_id / image_name" />
+                </div>
+                <div class="btn-row">
+                    <button class="btn ghost" id="refreshTasksBtn">刷新任务</button>
+                    <button class="btn success" id="assignBtn">分配给医生</button>
+                </div>
+            </div>
+
+            <div class="card-body" style="padding-top:0;">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:42px;"><input type="checkbox" id="selectAll"></th>
+                                <th>任务</th>
+                                <th>病例 / 图片</th>
+                                <th>模型版本</th>
+                                <th>状态</th>
+                                <th>分配给</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody"></tbody>
+                    </table>
+                </div>
+                <div style="height:12px"></div>
+                <div class="btn-row">
+                    <button class="btn warn" id="unassignBtn">取消分配</button>
+                    <button class="btn ghost" id="clearSelectionBtn">清空选择</button>
+                </div>
+                <div class="footer-note">说明：已审核任务仅用于统计和追踪，不会重新进入医生待办队列。</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const state = {
+            summary: null,
+            tasks: [],
+            doctors: [],
+            exportResult: null,
+        }
+
+        const el = (id) => document.getElementById(id)
+
+        function fmtCount(value) {
+            return (value ?? 0).toString()
+        }
+
+        function taskKindLabel(kind) {
+            return kind === 'hard' ? '页面一' : '页面二'
+        }
+
+        function reviewBadge(result) {
+            const map = {
+                gt_correct: 'GT 正确',
+                gt_error: 'GT 有误',
+                pseudo_label_correct: '伪标签正确',
+                pseudo_label_error: '伪标签错误'
+            }
+            return map[result] || result || '—'
+        }
+
+        function statusBadge(status, assignedTo = '') {
+            const isReviewed = status === 'reviewed'
+            const isAssigned = status === 'assigned' || !!assignedTo
+            const className = isReviewed ? 'reviewed' : (isAssigned ? 'assigned' : 'pending')
+            const label = isReviewed
+                ? (isAssigned ? `已审核 · ${assignedTo}` : '已审核')
+                : (isAssigned ? `已分配${assignedTo ? ` · ${assignedTo}` : ''}` : '未分配')
+            return `<span class="status ${className}">${label}</span>`
+        }
+
+        function doctorOptions(includeAll = true) {
+            const options = []
+            if (includeAll) options.push('<option value="">全部医生</option>')
+            state.doctors.forEach((doctor) => {
+                const value = typeof doctor === 'string' ? doctor : doctor.user_id
+                const label = typeof doctor === 'string'
+                    ? doctor
+                    : `${doctor.user_id} · ${doctor.assigned_total} / ${doctor.remaining_total}`
+                options.push(`<option value="${value}">${label}</option>`)
+            })
+            return options.join('')
+        }
+
+        async function loadDoctors() {
+            const res = await fetch('/_admin/users')
+            const data = await res.json()
+            state.doctors = data.doctors || []
+            el('doctorFilter').innerHTML = doctorOptions(true)
+            // fill assignee select with all doctors and default to doctor_1 when present
+            el('assigneeSelect').innerHTML = state.doctors.map(d => `<option value="${d}">${d}</option>`).join('')
+            const defaultAssignee = state.doctors.includes('doctor_1') ? 'doctor_1' : (state.doctors[0] || '')
+            if (defaultAssignee) el('assigneeSelect').value = defaultAssignee
+        }
+
+        async function loadSummary() {
+            const res = await fetch('/admin/summary')
+            if (!res.ok) {
+                alert('加载管理统计失败')
+                return
+            }
+            state.summary = await res.json()
+            renderSummary()
+            renderDoctors()
+            renderStaticPanels()
+            renderExportPanel()
+        }
+
+        async function loadTasks() {
+            const type = el('taskType').value
+            const res = await fetch(`/admin/tasks?type=${encodeURIComponent(type)}`)
+            state.tasks = res.ok ? await res.json() : []
+            renderTasks()
+        }
+
+        function renderStaticPanels() {
+            const summary = state.summary
+            if (!summary) return
+            el('runIdPill').textContent = `run_id: ${summary.run_id}`
+
+            el('metricTotalTasks').textContent = fmtCount(summary.tasks.total)
+            el('metricReviewedTotal').textContent = fmtCount(summary.tasks.reviewed_total)
+            el('metricRemainingTotal').textContent = fmtCount(summary.tasks.remaining_total)
+            el('metricExportState').textContent = summary.reviews.raw_total > 0 ? '已开始' : '待审核'
+        }
+
+        function renderSummary() {
+            const summary = state.summary
+            if (!summary) return
+            const progress = [
+                { key: 'hard', title: '页面一困难样本', total: summary.tasks.hard.total, reviewed: summary.tasks.hard.reviewed, remaining: summary.tasks.hard.remaining, color: 'linear-gradient(90deg, #6ee7ff, #8b5cf6)' },
+                { key: 'pseudo', title: '页面二伪标签', total: summary.tasks.pseudo.total, reviewed: summary.tasks.pseudo.reviewed, remaining: summary.tasks.pseudo.remaining, color: 'linear-gradient(90deg, #2dd4bf, #22c55e)' },
+            ]
+            el('progressBars').innerHTML = progress.map(item => {
+                const percent = item.total > 0 ? Math.min(100, Math.round((item.reviewed / item.total) * 100)) : 0
+                return `
+                    <div class="bar-row">
+                        <div class="bar-top"><span>${item.title}</span><span>${item.reviewed} / ${item.total} · 剩余 ${item.remaining}</span></div>
+                        <div class="bar-track"><div class="bar-fill" style="width:${percent}%; background:${item.color};"></div></div>
+                    </div>
+                `
+            }).join('')
+        }
+
+        function renderDoctors() {
+            const summary = state.summary
+            if (!summary) return
+            el('doctorList').innerHTML = summary.doctors.length
+                ? summary.doctors.map((doctor) => `
+                    <div class="list-item">
+                        <div class="list-item-head">
+                            <div class="list-item-title">${doctor.user_id}</div>
+                            <div class="pill accent">剩余 ${doctor.remaining_total}</div>
+                        </div>
+                        <div class="list-item-meta">
+                            已分配 ${doctor.assigned_total} · 已审核 ${doctor.reviewed_total} · 页面一 ${doctor.assigned_hard} · 页面二 ${doctor.assigned_pseudo}
+                        </div>
+                    </div>
+                `).join('')
+                : '<div class="list-item"><div class="list-item-title">暂无医生账号</div></div>'
+        }
+
+        function renderExportPanel() {
+            const summary = state.summary
+            if (!summary) return
+            const lines = [
+                `raw_reviews.jsonl: ${summary.reviews.raw_total} 条`,
+                `gt_issue_list.jsonl: ${summary.reviews.gt_issue_count} 条`,
+                `accepted_pseudo_labels.jsonl: ${summary.reviews.accepted_pseudo_label_count} 条`,
+                `pseudo_label_error_list.jsonl: ${summary.reviews.pseudo_error_count} 条`,
+            ]
+            el('exportResultList').innerHTML = lines.map((text) => `
+                <div class="list-item">
+                    <div class="list-item-title">${text}</div>
+                </div>
+            `).join('')
+        }
+
+        function renderTasks() {
+            const summary = state.summary
+            const type = el('taskType').value
+            const selectedDoctor = el('doctorFilter').value
+            const statusFilter = el('statusFilter').value
+            const search = (el('taskSearch').value || '').trim().toLowerCase()
+            const reviewedIds = summary ? new Set(type === 'hard' ? summary.tasks.hard_reviewed_ids : summary.tasks.pseudo_reviewed_ids) : new Set()
+
+            const list = state.tasks.filter((task) => {
+                if (selectedDoctor && (task.assigned_to || '') !== selectedDoctor) return false
+                if (statusFilter !== 'all' && task.status !== statusFilter) return false
+                if (search) {
+                    const haystack = [task.task_id, task.case_id, task.image_name, task.assigned_to, task.status].filter(Boolean).join(' ').toLowerCase()
+                    if (!haystack.includes(search)) return false
+                }
+                return true
+            })
+
+            el('taskTableBody').innerHTML = list.length
+                ? list.map((task) => `
+                    <tr>
+                        <td><input type="checkbox" class="task-check" value="${task.task_id}"></td>
+                        <td>
+                            <div><strong>${task.task_id}</strong></div>
+                            <div class="list-item-meta">${taskKindLabel(type)} · ${task.organ || '—'}</div>
+                        </td>
+                        <td>
+                            <div>${task.case_id || '—'}</div>
+                            <div class="list-item-meta">${task.image_name || '—'}</div>
+                        </td>
+                        <td>${task.model_version || '—'}</td>
+                        <td>${statusBadge(reviewedIds.has(task.task_id) ? 'reviewed' : task.status, task.assigned_to)}</td>
+                        <td>${task.assigned_to ? `<span class="pill">${task.assigned_to}</span>` : '—'}</td>
+                        <td class="hide-mobile">${task.model_confidence != null ? `conf ${task.model_confidence}` : '—'}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="7" style="padding:24px 16px;color:var(--muted)">没有符合筛选条件的任务</td></tr>`
+        }
+
+        function selectedTaskIds() {
+            return [...document.querySelectorAll('.task-check:checked')].map((el) => el.value)
+        }
+
+        async function assignSelected() {
+            const assignee = el('assigneeSelect').value
+            const taskIds = selectedTaskIds()
+            if (!assignee) return alert('请先在“分配给医生”选择目标医生')
+            if (!taskIds.length) return alert('请先勾选任务')
+            const res = await fetch('/admin/assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assignee, task_ids: taskIds })
+            })
+            if (!res.ok) return alert('分配失败')
+            await reloadDashboard(true)
+        }
+
+        async function unassignSelected() {
+            const taskIds = selectedTaskIds()
+            if (!taskIds.length) return alert('请先勾选任务')
+            const res = await fetch('/admin/unassign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_ids: taskIds })
+            })
+            if (!res.ok) return alert('取消分配失败')
+            await reloadDashboard(true)
+        }
+
+        async function exportResults() {
+            const btn = el('exportBtn')
+            btn.disabled = true
+            btn.textContent = '导出中...'
+            try {
+                const res = await fetch('/admin/export', { method: 'POST' })
+                const payload = await res.json().catch(() => ({}))
+                state.exportResult = payload
+                el('metricExportState').textContent = res.ok ? '已导出' : '导出失败'
+                const lines = [
+                    `returncode: ${payload.returncode ?? '—'}`,
+                    `stdout: ${(payload.stdout || '').trim() || '无'}`,
+                    `stderr: ${(payload.stderr || '').trim() || '无'}`,
+                ]
+                el('exportResultList').innerHTML = lines.map((text) => `
+                    <div class="list-item"><div class="list-item-title">${text}</div></div>
+                `).join('')
+                if (!res.ok) alert('导出失败，请查看输出')
+            } finally {
+                btn.disabled = false
+                btn.textContent = '手动导出结果'
+            }
+        }
+
+        async function reloadDashboard(forceTasks = false) {
+            await loadSummary()
+            if (forceTasks) {
+                await loadTasks()
+            } else {
+                await loadTasks()
+            }
+        }
+
+        function bindEvents() {
+            el('reloadSummaryBtn').addEventListener('click', async () => { await reloadDashboard(false) })
+            el('reloadAllBtn').addEventListener('click', async () => { await reloadDashboard(true) })
+            el('refreshTasksBtn').addEventListener('click', async () => { await loadTasks() })
+            el('assignBtn').addEventListener('click', assignSelected)
+            el('unassignBtn').addEventListener('click', unassignSelected)
+            el('exportBtn').addEventListener('click', exportResults)
+            el('taskType').addEventListener('change', loadTasks)
+            el('statusFilter').addEventListener('change', renderTasks)
+            el('doctorFilter').addEventListener('change', renderTasks)
+            el('taskSearch').addEventListener('input', renderTasks)
+            el('selectAll').addEventListener('change', (event) => {
+                document.querySelectorAll('.task-check').forEach((checkbox) => {
+                    checkbox.checked = event.target.checked
+                })
+            })
+            el('clearSelectionBtn').addEventListener('click', () => {
+                document.querySelectorAll('.task-check').forEach((checkbox) => {
+                    checkbox.checked = false
+                })
+                el('selectAll').checked = false
+            })
+        }
+
+        async function init() {
+            bindEvents()
+            await loadDoctors()
+            await reloadDashboard(true)
+        }
+
+        init()
+    </script>
+</body>
+
+</html>
